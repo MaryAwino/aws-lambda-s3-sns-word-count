@@ -91,3 +91,5 @@ Only screenshots that have actually been captured should be added.
 ## Project Status
 
 **Completed and tested successfully.**
+# aws-lambda-s3-sns-word-count
+Project overview, architecture, results and key learnings.
