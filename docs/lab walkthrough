@@ -1,0 +1,156 @@
+# AWS Lambda S3 SNS Word Count Challenge — Walkthrough
+
+## 1. Objective
+
+The objective was to create an event-driven, serverless workflow that automatically counts the words in a text file uploaded to Amazon S3 and emails the result using Amazon SNS.
+
+## 2. AWS Environment
+
+- **Region:** US West (Oregon), `us-west-2`
+- **Lambda function:** `WordCountFunction`
+- **IAM execution role:** `LambdaAccessRole`
+- **SNS topic:** `WordCountTopic`
+- **CloudWatch log group:** `/aws/lambda/WordCountFunction`
+- **S3 bucket:** The bucket created for this lab
+
+## 3. Create an SNS Topic
+
+1. Open the Amazon SNS console.
+2. Navigate to Topics.
+3. Create a Standard topic named `WordCountTopic`.
+4. Create an email subscription for the topic.
+5. Open the confirmation email and confirm the subscription.
+6. Verify that the subscription status is `Confirmed`.
+
+The confirmed subscription allows SNS to send word-count results to the subscriber.
+
+## 4. Create the Lambda Function
+
+1. Open the AWS Lambda console.
+2. Select Create function.
+3. Choose Author from scratch.
+4. Name the function `WordCountFunction`.
+5. Select the Python runtime used in the lab.
+6. Select the existing IAM role `LambdaAccessRole`.
+7. Create the function.
+
+## 5. Configure the Lambda Code
+
+The function uses Boto3 to access Amazon S3 and Amazon SNS.
+
+Its main operations are:
+
+1. Read the S3 event information.
+2. Identify the bucket and uploaded file.
+3. Retrieve the file using `s3.get_object()`.
+4. Decode the file as UTF-8.
+5. Count words using `len(file_content.split())`.
+6. Publish the result through SNS.
+7. Return a response containing the message.
+
+The SNS notification uses the subject `Word Count Result`.
+
+**Security note:** Account-specific resource ARNs should be replaced with placeholders in public documentation.
+
+## 6. Create the S3 Bucket
+
+1. Open the Amazon S3 console.
+2. Create a bucket with a globally unique name.
+3. Select the `us-west-2` Region.
+4. Keep Block Public Access enabled.
+5. Create the bucket.
+
+The bucket stores the text files that trigger the word-count process.
+
+## 7. Configure the S3 Trigger
+
+1. Open `WordCountFunction` in the Lambda console.
+2. Add an S3 trigger.
+3. Select the bucket created for the lab.
+4. Select the `s3:ObjectCreated:*` event type.
+5. Leave prefix and suffix filters blank if all uploaded objects should trigger the function.
+6. Save the trigger configuration.
+
+When a new object is uploaded, S3 sends an event to Lambda.
+
+## 8. Test One: sample.txt
+
+Create a text file named `sample.txt` containing:
+
+`AWS Lambda makes cloud automation easy.`
+
+Upload the file to the S3 bucket.
+
+**Expected result:** 7 words.
+
+The Lambda function processed the upload, and an email notification was received containing the correct word count.
+
+## 9. Verify Execution Logs
+
+1. Open `WordCountFunction` in the Lambda console.
+2. Select Monitor.
+3. Open the CloudWatch logs.
+4. Locate the log group `/aws/lambda/WordCountFunction`.
+5. Inspect the latest log stream.
+
+The execution logs help confirm whether the function ran successfully and whether errors occurred. The email notification provides the word-count result.
+
+## 10. Test Two: sample2.txt
+
+Create a text file named `sample2.txt` containing:
+
+`Cloud computing helps teams build secure applications faster.`
+
+Upload the file to the same S3 bucket.
+
+**Expected result:** 8 words.
+
+The Lambda function processed the second upload, and an email notification was received with the correct count.
+
+## 11. Test Results
+
+| Test | Expected count | Outcome |
+|---|---:|---|
+| `sample.txt` | 7 | Passed |
+| `sample2.txt` | 8 | Passed |
+
+Both test files generated the expected email notifications.
+
+## 12. Troubleshooting Notes
+
+### No email received
+
+- Check that the SNS email subscription is confirmed.
+- Check spam or junk folders.
+- Verify the SNS topic ARN and Region.
+- Review the Lambda execution logs.
+
+### Lambda did not run after upload
+
+- Verify that the S3 trigger is enabled.
+- Confirm that the correct bucket is configured.
+- Check the S3 event type.
+- Review Lambda permissions and CloudWatch logs.
+
+### Access denied errors
+
+Review the Lambda execution role and ensure it has the required permissions to read the S3 objects and publish to the SNS topic.
+
+### Incorrect word count
+
+Check the text file contents and remember that `split()` separates words using whitespace. Punctuation attached to a word does not count as a separate word.
+
+## 13. Security and Improvements
+
+- Use least-privilege IAM permissions.
+- Keep the S3 bucket private.
+- Never publish AWS credentials or sensitive account information.
+- Consider handling events containing multiple S3 records.
+- Add error handling for invalid text files and missing objects.
+- Consider duplicate event processing when designing production workflows.
+
+## 14. Conclusion
+
+This project demonstrated how Amazon S3, AWS Lambda, Amazon SNS, IAM, and CloudWatch can work together to create a serverless automation workflow.
+
+Two test uploads successfully triggered the function and generated email notifications with the correct word counts.
